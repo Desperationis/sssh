@@ -1,10 +1,14 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
+#include <sys/wait.h>
 
 char* sssh_cl_prefix();
 char* sssh_readline();
 char** sssh_tokenize_line(char*);
+
+int sssh_command(char**);
 int sssh_execute(char**);
 
 #define SSSH_RL_BUFFER 50
@@ -25,21 +29,9 @@ int main(int argc, char** argv) {
 
 
 		line = sssh_readline();
-		printf("%s\n", line);
 
 		args = sssh_tokenize_line(line);
-		//status = sssh_execute(args); // non-zero on exit
-		
-
-		// echo it back to test
-		int length = 0;
-		char* token = args[0];
-		while (token != NULL) {
-			length++;
-			token = args[length];
-		}
-
-		printf("# of tokens: %i\n", length);
+		status = sssh_execute(args); // non-zero on exit
 
 		free(line);
 		free(args);
@@ -133,4 +125,41 @@ char** sssh_tokenize_line(char* line) {
 
 	tokens[position] = NULL; // needed for execvp
 	return tokens;
+}
+
+/**
+ * Runs a command via execpv and fork().
+*/ 
+int sssh_command(char** args) {
+	int status;
+	pid_t pid;
+
+	pid = fork();
+	if(pid == 0) {
+		// Child
+		if(execvp(args[0], args)) {
+			perror("sssh");
+		}
+		exit(1);
+	}
+	else if (pid < 0) {
+		perror("sssh");
+	}
+	else {
+		// Parent; Wait for child process
+		do {
+		waitpid(pid, &status, WUNTRACED);
+		} while (!WIFEXITED(status) && !WIFSIGNALED(status));
+	}
+
+	return 0;
+}
+
+int sssh_execute(char** args) {
+	// Empty command
+	if(args[0] == NULL)
+		return 0;
+
+	sssh_command(args);
+	return 0;
 }
