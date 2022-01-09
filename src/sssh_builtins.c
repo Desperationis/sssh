@@ -25,7 +25,7 @@ int sssh_num_builtins() {
 
 int sssh_cd(char** args) {
 	if(args[1] == NULL) {
-		fprintf(stderr, "sssh: Expected path to \"cd\"");
+		fprintf(stderr, "sssh: Expected path to \"cd\"\n");
 	}
 	else {
 		if(chdir(args[1]) != 0) {
