@@ -8,5 +8,5 @@ add_executable(sssh)
 
 target_sources(sssh
 	PUBLIC
-	main.c
+	src/main.c
 	)
