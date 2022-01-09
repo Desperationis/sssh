@@ -1,3 +1,18 @@
+option=$1
+
+cmakeBuild() {
+	if [[ $option == *-d* ]]
+	then
+		echo "Compiling in debug.."
+		cmake -DCMAKE_BUILD_TYPE=Debug ..
+	else
+		echo "Compiling in release.."
+		cmake -DCMAKE_BUILD_TYPE=Release ..
+	fi
+}
+
+
+
 if ! [[ -d build ]]
 then
 	mkdir build
@@ -9,12 +24,13 @@ then
 fi
 
 cd build
-cmake ..
+cmakeBuild
 
 if ! [[ -e compile_commands.json ]]
 then
 	# Usually you need to cmake twice to get compile_commands.json
-	cmake .. 
+	cmakeBuild
+
 fi
 
 if make

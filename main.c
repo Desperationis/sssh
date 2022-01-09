@@ -7,7 +7,9 @@ char* sssh_readline();
 char** sssh_tokenize_line(char*);
 int sssh_execute(char**);
 
-#define SSSH_RL_BUFFER 40
+#define SSSH_RL_BUFFER 50
+#define SSSH_TOKEN_BUFFER 10
+#define SSSH_TOKEN_DELIM " \t\r\n\a"
 #define SSSH_MEM_ERROR 1
 
 int main(int argc, char** argv) {
@@ -23,12 +25,21 @@ int main(int argc, char** argv) {
 
 
 		line = sssh_readline();
-		//args = sssh_tokenize_line(line);
+		printf("%s\n", line);
+
+		args = sssh_tokenize_line(line);
 		//status = sssh_execute(args); // non-zero on exit
 		
 
 		// echo it back to test
-		printf("%s\n", line);
+		int length = 0;
+		char* token = args[0];
+		while (token != NULL) {
+			length++;
+			token = args[length];
+		}
+
+		printf("# of tokens: %i\n", length);
 
 		free(line);
 		free(args);
@@ -76,9 +87,8 @@ char* sssh_readline() {
 		buffer[buffer_pos] = c;
 		buffer_pos++;
 
-		/**
-		 * If the the text is longer than the buffer keep allocating more space.
-		*/ 
+		// If the the text is longer than the buffer keep allocating more
+		// space.
 		if(buffer_pos >= buffer_length) {
 			buffer_length += SSSH_RL_BUFFER;
 			buffer = realloc(buffer, buffer_length * sizeof(char));
@@ -89,4 +99,38 @@ char* sssh_readline() {
 			}
 		}
 	}
+}
+
+
+/**
+ * Split a line into execvp compatible tokens simply by whitespace. For sssh,
+ * we will not tokenize strings.
+*/ 
+char** sssh_tokenize_line(char* line) {
+	int buffer_length = SSSH_TOKEN_BUFFER;
+	char** tokens = malloc(buffer_length * sizeof(char*));
+	char* token;
+	int position = 0;
+
+	token = strtok(line, SSSH_TOKEN_DELIM); 
+	while(token != NULL) {
+		tokens[position] = token;
+		position++;
+
+		// Allocate more memory if we run out
+		if(position >= buffer_length) {
+			buffer_length += SSSH_TOKEN_BUFFER;
+			tokens = realloc(tokens, buffer_length * sizeof(char*));
+
+			if(!tokens) {
+				fprintf(stderr, "sssh: Unable to allocate memory\n");
+				exit(SSSH_MEM_ERROR);
+			}
+		}
+
+		token = strtok(NULL, SSSH_TOKEN_DELIM);
+	}
+
+	tokens[position] = NULL; // needed for execvp
+	return tokens;
 }
