@@ -11,6 +11,24 @@ char** sssh_tokenize_line(char*);
 int sssh_command(char**);
 int sssh_execute(char**);
 
+int sssh_cd(char** args);
+int sssh_help(char** args);
+int sssh_exit(char** args);
+int sssh_num_builtins();
+
+char* builtin_str[] = {
+	"cd",
+	"help",
+	"exit"
+};
+
+// Function pointer array
+int (*builtin_func[])(char**) = {
+	sssh_cd,
+	sssh_help,
+	sssh_exit
+};
+
 #define SSSH_RL_BUFFER 50
 #define SSSH_TOKEN_BUFFER 10
 #define SSSH_TOKEN_DELIM " \t\r\n\a"
@@ -156,10 +174,54 @@ int sssh_command(char** args) {
 }
 
 int sssh_execute(char** args) {
+	int i; 
+
 	// Empty command
 	if(args[0] == NULL)
 		return 0;
 
+	// Check for builtins.
+	for(i = 0; i < sssh_num_builtins(); i++) {
+		if(strcmp(args[0], builtin_str[i]) == 0) {
+			return (*builtin_func[i])(args);
+		}
+	}
+
 	sssh_command(args);
 	return 0;
+}
+
+int sssh_num_builtins() {
+	return sizeof(builtin_str) / sizeof(char*);
+}
+
+int sssh_cd(char** args) {
+	if(args[1] == NULL) {
+		fprintf(stderr, "sssh: Expected path to \"cd\"");
+	}
+	else {
+		if(chdir(args[1]) != 0) {
+			perror("sssh");
+		}
+	}
+
+	return 0;
+}
+
+int sssh_help(char** args) {
+	int i;
+	printf("Diego Contreras' Super Simple Shell.\n");
+	printf("The following are built ins:\n");
+
+	for(i = 0; i < sssh_num_builtins(); i++) {
+		printf("\t%s\n", builtin_str[i]);
+	}
+
+	printf("Use \"man\" for information on any other programs.\n");
+
+	return 0;
+}
+
+int sssh_exit(char** args) {
+	return 1;
 }
