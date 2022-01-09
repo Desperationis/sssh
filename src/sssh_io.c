@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
+#include <unistd.h>
 #include "sssh_declare.h"
 
 
@@ -14,8 +15,14 @@
  * This should not have a space at the end of it.
 */ 
 char* sssh_cl_prefix() {
-	char* buffer = malloc(sizeof(char) * 40);
-	strcpy(buffer, "$");	
+	char* buffer = malloc(sizeof(char) * 100);
+	if(getcwd(buffer, sizeof(char)*100) != NULL) {
+		sprintf(buffer, "%s$", buffer);
+	}
+	else {
+		perror("sssh");
+		exit(SSSH_MEM_ERROR);
+	}
 
 	return buffer;
 }
